@@ -10,6 +10,7 @@ class botnet_server:
 #-------------------PRIVATE AREA-------------------
     HOST = '127.0.0.1'  # The default server's hostname or IP address
     PORT = 26101  # The default port used by the server
+    BUF_SIZE = 256
     def __init__(self, host = HOST, port = PORT):
         self.host = host # server host IP
         self.port = port # server port
@@ -57,7 +58,7 @@ class botnet_server:
         size = int(self.nr.readline().strip())
         chunks = []
         while size > 0:
-            chunk = self.conn.recv(min(size, 1024))
+            chunk = self.conn.recv(min(size, BUF_SIZE))
             if chunk == b'':
                 raise RuntimeError("socket connection broken")
             chunks.append(chunk)
