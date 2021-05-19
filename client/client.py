@@ -101,14 +101,10 @@ class windowApp(object):
         return
     def killCF(self):
     	e=self.val.get()
-
     	messagebox.showinfo("Notification",self.client.kill_app(e))
 
     def startCF(self):
     	e=self.val.get()
-    	### START CODE HERE ###
-
-    	### END CODE HERE ###
     	messagebox.showinfo("Notification",self.client.start_app(e))
     def startApp(self):
         ### START CODE HERE ###
@@ -205,9 +201,6 @@ class windowProcess(object):
                 self.my_tree.insert(parent='', index='end', iid=count, text="", values=(record[0], record[1], record[2]), tags=('oddrow',))
 
             count += 1
-        ### START CODE HERE ###
-        
-        ### END CODE HERE ###
     def killPS(self):
         ### START CODE HERE ###
         self.master2 = Toplevel(self.master)
@@ -220,17 +213,12 @@ class windowProcess(object):
         return
     def killCF(self):
     	e=self.val.get()
-
-    	self.master2.quit()
     	messagebox.showinfo("Notification",self.client.kill_process(e))
 
     def startCF(self):
     	e=self.val.get()
-    	### START CODE HERE ###
-
-    	### END CODE HERE ###
-    	self.master2.quit()
     	messagebox.showinfo("Notification",self.client.start_process(e))
+        
     def startPS(self):
         ### START CODE HERE ###
         self.master2 = Toplevel(self.master)
@@ -239,8 +227,8 @@ class windowProcess(object):
         self.val.place(x=5,y=10)
         self.buttonConfirm = Button(self.master2,text="Start",padx=18,pady=5,command=self.startCF)
         self.buttonConfirm.place(x=290,y=5)
-        ### END CODE HERE ###
         return
+    
     def deletePS(self):
         ### START CODE HERE ###
         for record in self.my_tree.get_children():
