@@ -1,6 +1,6 @@
 from tkinter import *
 from PIL import Image
-from botnet_server import *
+from botnet_socket.botnet_server import *
 import threading
 import socket
 
@@ -45,7 +45,7 @@ def get_host_ip():
 def turn_on():
 	global is_on
 	sv = botnet_server(host = get_host_ip())
-	sv.listen_and_accept()
+	sv.run_server()
 	while True:
 		t = sv.response_msg()
 		if not t or not is_on:

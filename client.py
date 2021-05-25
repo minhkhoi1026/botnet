@@ -7,7 +7,7 @@ from tkinter import filedialog
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-from botnet_client import *
+from botnet_socket.botnet_client import *
 
 class windowApp(object):
 
@@ -500,6 +500,7 @@ class windowMain(object):
 
     def __init__(self, master):
         self.master = master
+        self.connected = False
         self.master.title("Client")
         self.master.geometry("430x350")
         self.client=botnet_client()
@@ -538,11 +539,14 @@ class windowMain(object):
 
         ### START CODE HERE ###
         self.client.set(self.ip.get())
-        messagebox.showinfo("Notification",self.client.connect())
+        msg = self.client.connect()
+        messagebox.showinfo("Notification", msg)
+        if (msg == "Connected successfully!"):
+            self.connected = True
         ### END CODE HERE ###
         return
     def Button_Process(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
@@ -551,7 +555,7 @@ class windowMain(object):
         ### END CODE HERE ###
         return
     def Button_App(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
@@ -560,7 +564,7 @@ class windowMain(object):
         ### END CODE HERE ###
         return
     def Button_Shutdown(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
@@ -568,7 +572,7 @@ class windowMain(object):
         ### END CODE HERE ###
         return
     def Button_Cap(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
@@ -577,7 +581,7 @@ class windowMain(object):
         ### END CODE HERE ###
         return
     def Button_Key(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
@@ -586,7 +590,7 @@ class windowMain(object):
         ### END CODE HERE ###
         return
     def Button_Registry(self):
-        if self.client.nr==None:
+        if not self.connected:
             messagebox.showinfo("Notification","Not connected to the server yet")
             return
         ### START CODE HERE ###
